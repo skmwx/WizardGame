@@ -4,6 +4,7 @@ const {
   TRAINING_COST,
   TRAINING_SCHOOL_XP,
   XP_TO_LEVEL,
+  explorationLocations,
   magicSchools,
   shopItems,
   spells
@@ -107,6 +108,11 @@ function renderHubPanel(title, container, state, handlers) {
     return;
   }
 
+  if (state.hubActivity === "explore") {
+    renderOldForestActions(title, container, handlers);
+    return;
+  }
+
   title.textContent = "Hub";
   renderHubActions(container, handlers);
 }
@@ -114,6 +120,7 @@ function renderHubPanel(title, container, state, handlers) {
 function renderHubActions(container, handlers) {
   const actions = [
     ["Find Duel", handlers.onFindDuel],
+    ["Explore", handlers.onExplore],
     ["Train Magic", handlers.onTrainMagic],
     ["Visit Shop", handlers.onVisitShop],
     ["Rest", handlers.onRest]
@@ -125,6 +132,23 @@ function renderHubActions(container, handlers) {
     button.type = "button";
     button.textContent = label;
     button.addEventListener("click", handler);
+    container.append(button);
+  }
+}
+
+function renderOldForestActions(title, container, handlers) {
+  const location = explorationLocations.find((candidate) => candidate.id === "oldForest");
+  title.textContent = location?.name ?? "Old Forest";
+
+  for (const choice of location?.choices ?? []) {
+    const button = document.createElement("button");
+    button.className = "spell-button";
+    button.type = "button";
+    button.innerHTML = `
+      <strong>${choice.label}</strong>
+      <span>${choice.description}</span>
+    `;
+    button.addEventListener("click", () => handlers.onExploreChoice(choice.id));
     container.append(button);
   }
 }

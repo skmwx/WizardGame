@@ -21,6 +21,58 @@ window.WizardData = {
       inventoryKey: "shieldPotion"
     }
   ],
+  explorationLocations: [
+    {
+      id: "oldForest",
+      name: "Old Forest",
+      choices: [
+        {
+          id: "searchHerbs",
+          label: "Search for herbs",
+          description: "Look for useful remedies beneath the old roots.",
+          log: "You find moonlit herbs and brew them into a Shield Potion.",
+          inventoryReward: {
+            key: "shieldPotion",
+            amount: 1
+          }
+        },
+        {
+          id: "investigateLights",
+          label: "Investigate magical lights",
+          description: "Study the quiet lights drifting between the trees.",
+          log: "The lights arrange themselves into a silent lesson for the mind.",
+          schoolXpReward: {
+            school: "mind",
+            amount: 3
+          }
+        },
+        {
+          id: "challengeSpirit",
+          label: "Challenge a lurking spirit",
+          description: "Call out the presence watching from the shadows.",
+          log: "A Forest Spirit answers your challenge.",
+          enemyId: "forestSpirit"
+        },
+        {
+          id: "returnToHub",
+          label: "Return to hub",
+          description: "Leave the forest path and return to familiar ground.",
+          returnToHub: true
+        }
+      ]
+    }
+  ],
+  specialEnemies: {
+    forestSpirit: {
+      id: "forestSpirit",
+      name: "Forest Spirit",
+      maxHealth: 40,
+      attackMin: 5,
+      attackMax: 10,
+      xpReward: 32,
+      goldReward: 12
+    }
+  },
   magicSchools: ["fire", "water", "mind"],
   spells: [
   {

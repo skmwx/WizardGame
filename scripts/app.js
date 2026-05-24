@@ -2,10 +2,12 @@
 const {
   castSpell,
   buyShopItem,
+  exploreOldForest,
   findDuel,
   restAfterBattle,
   restAtHub,
   returnToHubActivity,
+  resolveExplorationChoice,
   surrenderBattle,
   trainSchool,
   trainMagic,
@@ -26,6 +28,16 @@ const handlers = {
   },
   onContinue() {
     gameState = restAfterBattle(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onExplore() {
+    gameState = exploreOldForest(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onExploreChoice(choiceId) {
+    gameState = resolveExplorationChoice(gameState, choiceId);
     saveState(gameState);
     draw();
   },

@@ -5,8 +5,10 @@ const {
   TRAINING_COST,
   TRAINING_SCHOOL_XP,
   XP_TO_LEVEL,
+  explorationLocations,
   magicSchools,
-  shopItems
+  shopItems,
+  specialEnemies
 } = window.WizardData;
 const { createEnemy, getNextEnemyIndex } = window.WizardState;
 const { getMasteredSpellEffect, grantSchoolXp, grantSpellProgression, isSpellUnlocked } = window.WizardProgression;
@@ -73,6 +75,16 @@ function findDuel(state) {
   return nextState;
 }
 
+function exploreOldForest(state) {
+  const nextState = structuredClone(state);
+
+  nextState.mode = "hub";
+  nextState.hubActivity = "explore";
+  addLog(nextState, "You follow a mossy path into the Old Forest.");
+
+  return nextState;
+}
+
 function restAtHub(state) {
   const nextState = structuredClone(state);
 
@@ -110,6 +122,44 @@ function returnToHubActivity(state) {
   return nextState;
 }
 
+function resolveExplorationChoice(state, choiceId) {
+  const nextState = structuredClone(state);
+  const location = getOldForestLocation();
+  const choice = location?.choices.find((candidate) => candidate.id === choiceId);
+
+  if (nextState.mode !== "hub" || nextState.hubActivity !== "explore") {
+    addLog(nextState, "Return to the Old Forest before making that choice.");
+    return nextState;
+  }
+
+  if (!choice) {
+    addLog(nextState, "Unknown forest path.");
+    return nextState;
+  }
+
+  if (choice.returnToHub) {
+    nextState.hubActivity = "main";
+    addLog(nextState, "You return to the hub from the Old Forest.");
+    return nextState;
+  }
+
+  addLog(nextState, choice.log);
+
+  if (choice.inventoryReward) {
+    grantInventoryReward(nextState, choice.inventoryReward);
+  }
+
+  if (choice.schoolXpReward) {
+    grantExplorationSchoolXp(nextState, choice.schoolXpReward);
+  }
+
+  if (choice.enemyId) {
+    startSpecialEnemyDuel(nextState, choice.enemyId);
+  }
+
+  return nextState;
+}
+
 function trainSchool(state, school) {
   const nextState = structuredClone(state);
 
@@ -140,6 +190,39 @@ function trainSchool(state, school) {
   }
 
   return nextState;
+}
+
+function grantInventoryReward(state, reward) {
+  state.player.inventory[reward.key] ??= 0;
+  state.player.inventory[reward.key] += reward.amount;
+}
+
+function grantExplorationSchoolXp(state, reward) {
+  const messages = grantSchoolXp(state.player, reward.school, reward.amount);
+
+  addLog(
+    state,
+    `${formatLabel(reward.school)} school gains ${reward.amount} XP.`
+  );
+
+  for (const message of messages) {
+    addLog(state, message);
+  }
+}
+
+function startSpecialEnemyDuel(state, enemyId) {
+  const enemy = specialEnemies[enemyId];
+
+  if (!enemy) {
+    addLog(state, "No spirit answers.");
+    return;
+  }
+
+  state.mode = "duel";
+  state.hubActivity = "main";
+  state.battleOver = false;
+  state.enemyNextAttackPenalty = 0;
+  state.enemy = createEnemyFromTemplate(enemy);
 }
 
 function buyShopItem(state, itemId) {
@@ -346,7 +429,10 @@ function loseBattle(state, message = "Defeat.") {
 }
 
 function returnToHub(state) {
-  state.enemyIndex = getNextEnemyIndex(state.enemyIndex);
+  if (!isSpecialEnemy(state.enemy)) {
+    state.enemyIndex = getNextEnemyIndex(state.enemyIndex);
+  }
+
   state.enemy = createEnemy(state.enemyIndex);
   state.enemyNextAttackPenalty = 0;
   state.battleOver = false;
@@ -381,6 +467,21 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function createEnemyFromTemplate(template) {
+  return {
+    ...structuredClone(template),
+    currentHealth: template.maxHealth
+  };
+}
+
+function getOldForestLocation() {
+  return explorationLocations.find((location) => location.id === "oldForest");
+}
+
+function isSpecialEnemy(enemy) {
+  return Boolean(enemy && specialEnemies[enemy.id]);
+}
+
 function formatLabel(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -388,10 +489,12 @@ function formatLabel(value) {
 window.WizardCombat = {
   castSpell,
   buyShopItem,
+  exploreOldForest,
   findDuel,
   returnToHubActivity,
   restAfterBattle,
   restAtHub,
+  resolveExplorationChoice,
   surrenderBattle,
   trainSchool,
   trainMagic,

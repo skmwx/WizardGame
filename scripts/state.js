@@ -96,7 +96,9 @@ function normalizeMode(mode) {
 }
 
 function normalizeHubActivity(activity) {
-  return activity === "training" || activity === "shop" ? activity : "main";
+  const validActivities = ["main", "training", "shop", "explore"];
+
+  return validActivities.includes(activity) ? activity : "main";
 }
 
 function migrateSaveState(savedState, sourceSaveVersion) {
