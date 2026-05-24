@@ -1,18 +1,22 @@
 (() => {
 const { STORAGE_KEY, enemyWizards, magicSchools, spells, startingPlayer } = window.WizardData;
+const CURRENT_SAVE_VERSION = 2;
 
 function createInitialState() {
   const player = structuredClone(startingPlayer);
   const enemyIndex = 0;
 
   return {
+    saveVersion: CURRENT_SAVE_VERSION,
+    mode: "hub",
+    hubActivity: "main",
     player,
     enemyIndex,
     enemy: createEnemy(enemyIndex),
     enemyNextAttackPenalty: 0,
     battleOver: false,
     log: [
-      "A rival wizard steps forward. Choose a spell to begin."
+      "You arrive at the hub. Choose an activity."
     ]
   };
 }
@@ -31,7 +35,13 @@ function getNextEnemyIndex(currentIndex) {
 }
 
 function saveState(state) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      ...state,
+      saveVersion: CURRENT_SAVE_VERSION
+    })
+  );
 }
 
 function loadState() {
@@ -50,27 +60,50 @@ function loadState() {
 
 function normalizeState(savedState) {
   const fallback = createInitialState();
+  const sourceSaveVersion = Number.isInteger(savedState.saveVersion)
+    ? savedState.saveVersion
+    : 1;
+  const migratedState = migrateSaveState(savedState, sourceSaveVersion);
   const player = {
     ...fallback.player,
-    ...savedState.player,
-    schools: normalizeSchools(savedState.player?.schools),
-    spellMastery: normalizeSpellMastery(savedState.player?.spellMastery)
+    ...migratedState.player,
+    schools: normalizeSchools(migratedState.player?.schools),
+    spellMastery: normalizeSpellMastery(migratedState.player?.spellMastery)
   };
-  const enemyIndex = Number.isInteger(savedState.enemyIndex)
-    ? savedState.enemyIndex
+  const enemyIndex = Number.isInteger(migratedState.enemyIndex)
+    ? migratedState.enemyIndex
     : fallback.enemyIndex;
-  const enemy = savedState.enemy
-    ? { ...createEnemy(enemyIndex), ...savedState.enemy }
+  const enemy = migratedState.enemy
+    ? { ...createEnemy(enemyIndex), ...migratedState.enemy }
     : createEnemy(enemyIndex);
 
   return {
     ...fallback,
-    ...savedState,
+    ...migratedState,
+    saveVersion: CURRENT_SAVE_VERSION,
     player,
     enemyIndex,
     enemy,
-    log: Array.isArray(savedState.log) ? savedState.log.slice(0, 40) : fallback.log
+    mode: normalizeMode(migratedState.mode),
+    hubActivity: normalizeHubActivity(migratedState.hubActivity),
+    log: Array.isArray(migratedState.log) ? migratedState.log.slice(0, 40) : fallback.log
   };
+}
+
+function normalizeMode(mode) {
+  return mode === "hub" || mode === "duel" ? mode : "duel";
+}
+
+function normalizeHubActivity(activity) {
+  return activity === "training" ? activity : "main";
+}
+
+function migrateSaveState(savedState, sourceSaveVersion) {
+  if (sourceSaveVersion === 1) {
+    return savedState;
+  }
+
+  return savedState;
 }
 
 function normalizeSchools(savedSchools = {}) {

@@ -1,5 +1,15 @@
 (() => {
-const { castSpell, restAfterBattle, surrenderBattle, waitTurn } = window.WizardCombat;
+const {
+  castSpell,
+  findDuel,
+  restAfterBattle,
+  restAtHub,
+  returnToHubActivity,
+  surrenderBattle,
+  trainSchool,
+  trainMagic,
+  waitTurn
+} = window.WizardCombat;
 const { createInitialState, loadState, saveState } = window.WizardState;
 const { render } = window.WizardRender;
 
@@ -16,8 +26,33 @@ const handlers = {
     saveState(gameState);
     draw();
   },
+  onFindDuel() {
+    gameState = findDuel(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onRest() {
+    gameState = restAtHub(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onReturnToHubActivity() {
+    gameState = returnToHubActivity(gameState);
+    saveState(gameState);
+    draw();
+  },
   onSurrender() {
     gameState = surrenderBattle(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onTrainMagic() {
+    gameState = trainMagic(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onTrainSchool(school) {
+    gameState = trainSchool(gameState, school);
     saveState(gameState);
     draw();
   },

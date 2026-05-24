@@ -1,4 +1,5 @@
 (() => {
+const { spells } = window.WizardData;
 const { getSpellMasteryLevel: getLevelFromXp } = window.WizardState;
 const { getSchoolLevel } = window.WizardState;
 
@@ -68,26 +69,44 @@ function grantSpellProgression(player, spell) {
   player.schools[spell.school] ??= { xp: 0 };
   player.spellMastery[spell.id] ??= { xp: 0 };
 
-  const schoolProgress = player.schools[spell.school];
   const masteryProgress = player.spellMastery[spell.id];
-  const previousSchoolLevel = getSchoolLevel(schoolProgress.xp);
   const previousMasteryLevel = getSpellMasteryLevel(player, spell.id);
 
-  schoolProgress.xp += 1;
+  messages.push(...grantSchoolXp(player, spell.school, 1));
   masteryProgress.xp += 1;
 
-  const nextSchoolLevel = getSchoolLevel(schoolProgress.xp);
   const nextMasteryLevel = getSpellMasteryLevel(player, spell.id);
-
-  if (nextSchoolLevel > previousSchoolLevel) {
-    messages.push(`${formatLabel(spell.school)} school increased to level ${nextSchoolLevel}.`);
-  }
 
   if (nextMasteryLevel > previousMasteryLevel) {
     messages.push(`${spell.name} mastery increased to level ${nextMasteryLevel}.`);
   }
 
   return messages;
+}
+
+function grantSchoolXp(player, school, amount) {
+  const messages = [];
+  player.schools[school] ??= { xp: 0 };
+
+  const schoolProgress = player.schools[school];
+  const previousSchoolLevel = getSchoolLevel(schoolProgress.xp);
+  schoolProgress.xp += amount;
+  const nextSchoolLevel = getSchoolLevel(schoolProgress.xp);
+
+  if (nextSchoolLevel > previousSchoolLevel) {
+    messages.push(`${formatLabel(school)} school increased to level ${nextSchoolLevel}.`);
+    messages.push(...getUnlockMessages(player, school, previousSchoolLevel, nextSchoolLevel));
+  }
+
+  return messages;
+}
+
+function getUnlockMessages(player, school, previousLevel, nextLevel) {
+  return spells
+    .filter((spell) => spell.unlock?.school === school)
+    .filter((spell) => spell.unlock.level > previousLevel && spell.unlock.level <= nextLevel)
+    .filter((spell) => isSpellUnlocked(spell, player))
+    .map((spell) => `${spell.name} is now unlocked.`);
 }
 
 function formatLabel(value) {
@@ -100,6 +119,7 @@ window.WizardProgression = {
   getMasteredSpellEffect,
   getPlayerSchoolLevel,
   getSpellMasteryLevel,
+  grantSchoolXp,
   grantSpellProgression,
   isSpellUnlocked
 };

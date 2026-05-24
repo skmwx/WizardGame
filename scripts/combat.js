@@ -1,13 +1,18 @@
 (() => {
-const { MANA_RECOVERY_PER_TURN, XP_TO_LEVEL } = window.WizardData;
+const { MANA_RECOVERY_PER_TURN, TRAINING_COST, TRAINING_SCHOOL_XP, XP_TO_LEVEL, magicSchools } = window.WizardData;
 const { createEnemy, getNextEnemyIndex } = window.WizardState;
-const { getMasteredSpellEffect, grantSpellProgression, isSpellUnlocked } = window.WizardProgression;
+const { getMasteredSpellEffect, grantSchoolXp, grantSpellProgression, isSpellUnlocked } = window.WizardProgression;
 
 function castSpell(state, spell) {
   const nextState = structuredClone(state);
 
+  if (nextState.mode !== "duel") {
+    addLog(nextState, "Find a duel before casting combat spells.");
+    return nextState;
+  }
+
   if (nextState.battleOver) {
-    startNextBattle(nextState);
+    returnToHub(nextState);
     return nextState;
   }
 
@@ -43,12 +48,90 @@ function castSpell(state, spell) {
 
 function restAfterBattle(state) {
   const nextState = structuredClone(state);
-  startNextBattle(nextState);
+  returnToHub(nextState);
+  return nextState;
+}
+
+function findDuel(state) {
+  const nextState = structuredClone(state);
+
+  nextState.mode = "duel";
+  nextState.hubActivity = "main";
+  nextState.battleOver = false;
+  nextState.enemyNextAttackPenalty = 0;
+  nextState.enemy = createEnemy(nextState.enemyIndex);
+  addLog(nextState, `${nextState.enemy.name} steps forward for a duel.`);
+
+  return nextState;
+}
+
+function restAtHub(state) {
+  const nextState = structuredClone(state);
+
+  nextState.player.currentMana = nextState.player.maxMana;
+  nextState.player.currentShield = nextState.player.maxShield;
+  addLog(nextState, "You rest and fully restore mana and shield.");
+
+  return nextState;
+}
+
+function trainMagic(state) {
+  const nextState = structuredClone(state);
+
+  nextState.mode = "hub";
+  nextState.hubActivity = "training";
+
+  return nextState;
+}
+
+function returnToHubActivity(state) {
+  const nextState = structuredClone(state);
+
+  nextState.mode = "hub";
+  nextState.hubActivity = "main";
+
+  return nextState;
+}
+
+function trainSchool(state, school) {
+  const nextState = structuredClone(state);
+
+  if (nextState.mode !== "hub") {
+    addLog(nextState, "Return to the hub before training.");
+    return nextState;
+  }
+
+  if (!magicSchools.includes(school)) {
+    addLog(nextState, "Unknown magic school.");
+    return nextState;
+  }
+
+  if (nextState.player.gold < TRAINING_COST) {
+    addLog(nextState, `Training costs ${TRAINING_COST} gold.`);
+    return nextState;
+  }
+
+  nextState.player.gold -= TRAINING_COST;
+  const messages = grantSchoolXp(nextState.player, school, TRAINING_SCHOOL_XP);
+  addLog(
+    nextState,
+    `Trained ${formatLabel(school)} magic for ${TRAINING_COST} gold. ${formatLabel(school)} school gains ${TRAINING_SCHOOL_XP} XP.`
+  );
+
+  for (const message of messages) {
+    addLog(nextState, message);
+  }
+
   return nextState;
 }
 
 function waitTurn(state) {
   const nextState = structuredClone(state);
+
+  if (nextState.mode !== "duel") {
+    addLog(nextState, "Find a duel before waiting on an enemy turn.");
+    return nextState;
+  }
 
   if (nextState.battleOver) {
     return nextState;
@@ -72,7 +155,7 @@ function waitTurn(state) {
 function surrenderBattle(state) {
   const nextState = structuredClone(state);
 
-  if (!nextState.battleOver) {
+  if (nextState.mode === "duel" && !nextState.battleOver) {
     loseBattle(nextState, "You surrender the duel.");
   }
 
@@ -149,14 +232,14 @@ function loseBattle(state, message = "Defeat.") {
   addLog(state, `${message} You keep your progress and gain ${consolationXp} XP.`);
 }
 
-function startNextBattle(state) {
+function returnToHub(state) {
   state.enemyIndex = getNextEnemyIndex(state.enemyIndex);
   state.enemy = createEnemy(state.enemyIndex);
   state.enemyNextAttackPenalty = 0;
   state.battleOver = false;
-  state.player.currentMana = state.player.maxMana;
-  state.player.currentShield = state.player.maxShield;
-  addLog(state, `${state.enemy.name} arrives for the next duel.`);
+  state.mode = "hub";
+  state.hubActivity = "main";
+  addLog(state, "You return to the hub.");
 }
 
 function gainXp(state, amount) {
@@ -185,10 +268,19 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function formatLabel(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 window.WizardCombat = {
   castSpell,
+  findDuel,
+  returnToHubActivity,
   restAfterBattle,
+  restAtHub,
   surrenderBattle,
+  trainSchool,
+  trainMagic,
   waitTurn
 };
 })();

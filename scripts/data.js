@@ -3,6 +3,8 @@ window.WizardData = {
   STORAGE_KEY: "wizard-duel-save-v1",
   XP_TO_LEVEL: 100,
   MANA_RECOVERY_PER_TURN: 5,
+  TRAINING_COST: 15,
+  TRAINING_SCHOOL_XP: 3,
   magicSchools: ["fire", "water", "mind"],
   spells: [
   {

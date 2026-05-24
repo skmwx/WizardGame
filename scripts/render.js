@@ -1,12 +1,12 @@
 (() => {
-const { XP_TO_LEVEL, spells } = window.WizardData;
+const { TRAINING_COST, TRAINING_SCHOOL_XP, XP_TO_LEVEL, magicSchools, spells } = window.WizardData;
 const { getSchoolLevel, getSpellMasteryLevel } = window.WizardState;
 const { describeSpell, describeUnlockRequirement, isSpellUnlocked } = window.WizardProgression;
 
 function render(state, handlers) {
   renderPlayer(state);
   renderEnemy(state);
-  renderSpells(state, handlers);
+  renderActivityPanel(state, handlers);
   renderProgression(state);
   renderLog(state);
 }
@@ -25,6 +25,13 @@ function renderPlayer(state) {
 }
 
 function renderEnemy(state) {
+  const panel = document.querySelector("#enemy-panel");
+  panel.hidden = state.mode !== "duel";
+
+  if (state.mode !== "duel") {
+    return;
+  }
+
   const { enemy } = state;
   const stats = [
     ["Name", enemy.name],
@@ -36,17 +43,25 @@ function renderEnemy(state) {
   renderStats(document.querySelector("#enemy-stats"), stats);
 }
 
-function renderSpells(state, handlers) {
+function renderActivityPanel(state, handlers) {
+  const title = document.querySelector("#activity-title");
   const container = document.querySelector("#spell-buttons");
   const actions = document.querySelector("#combat-actions");
   container.innerHTML = "";
   actions.innerHTML = "";
 
+  if (state.mode === "hub") {
+    renderHubPanel(title, container, state, handlers);
+    return;
+  }
+
+  title.textContent = "Spells";
+
   if (state.battleOver) {
     const button = document.createElement("button");
     button.className = "spell-button";
     button.type = "button";
-    button.textContent = "Continue to next duel";
+    button.textContent = "Return to hub";
     button.addEventListener("click", handlers.onContinue);
     container.append(button);
     return;
@@ -67,6 +82,55 @@ function renderSpells(state, handlers) {
   }
 
   renderCombatActions(actions, handlers);
+}
+
+function renderHubPanel(title, container, state, handlers) {
+  if (state.hubActivity === "training") {
+    title.textContent = "Train Magic";
+    renderTrainingActions(container, state, handlers);
+    return;
+  }
+
+  title.textContent = "Hub";
+  renderHubActions(container, handlers);
+}
+
+function renderHubActions(container, handlers) {
+  const actions = [
+    ["Find Duel", handlers.onFindDuel],
+    ["Train Magic", handlers.onTrainMagic],
+    ["Rest", handlers.onRest]
+  ];
+
+  for (const [label, handler] of actions) {
+    const button = document.createElement("button");
+    button.className = "spell-button";
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", handler);
+    container.append(button);
+  }
+}
+
+function renderTrainingActions(container, state, handlers) {
+  for (const school of magicSchools) {
+    const button = document.createElement("button");
+    button.className = "spell-button";
+    button.type = "button";
+    button.innerHTML = `
+      <strong>${formatLabel(school)}</strong>
+      <span>Costs ${TRAINING_COST} gold and grants ${TRAINING_SCHOOL_XP} school XP.</span>
+    `;
+    button.addEventListener("click", () => handlers.onTrainSchool(school));
+    container.append(button);
+  }
+
+  const backButton = document.createElement("button");
+  backButton.className = "spell-button";
+  backButton.type = "button";
+  backButton.textContent = "Back to hub";
+  backButton.addEventListener("click", handlers.onReturnToHubActivity);
+  container.append(backButton);
 }
 
 function renderCombatActions(container, handlers) {
