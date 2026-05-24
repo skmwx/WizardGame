@@ -135,6 +135,7 @@ function renderShopActions(container, state, handlers) {
     const button = document.createElement("button");
     button.className = "spell-button";
     button.type = "button";
+    button.disabled = state.player.gold < item.cost;
     button.innerHTML = `
       <strong>${item.name}</strong>
       <span>Costs ${item.cost} gold. Owned: ${owned}.</span>
@@ -156,6 +157,7 @@ function renderTrainingActions(container, state, handlers) {
     const button = document.createElement("button");
     button.className = "spell-button";
     button.type = "button";
+    button.disabled = state.player.gold < TRAINING_COST;
     button.innerHTML = `
       <strong>${formatLabel(school)}</strong>
       <span>Costs ${TRAINING_COST} gold and grants ${TRAINING_SCHOOL_XP} school XP.</span>
@@ -177,14 +179,16 @@ function renderCombatActions(container, state, handlers) {
   manaPotionButton.type = "button";
   manaPotionButton.textContent = `Use Mana Potion (${state.player.inventory.manaPotion})`;
   manaPotionButton.title = `Restores ${POTION_RESTORE_AMOUNT} mana.`;
-  manaPotionButton.disabled = state.player.inventory.manaPotion <= 0;
+  manaPotionButton.disabled = state.player.inventory.manaPotion <= 0
+    || state.player.currentMana >= state.player.maxMana;
   manaPotionButton.addEventListener("click", () => handlers.onUsePotion("manaPotion"));
 
   const shieldPotionButton = document.createElement("button");
   shieldPotionButton.type = "button";
   shieldPotionButton.textContent = `Use Shield Potion (${state.player.inventory.shieldPotion})`;
   shieldPotionButton.title = `Restores ${POTION_RESTORE_AMOUNT} shield.`;
-  shieldPotionButton.disabled = state.player.inventory.shieldPotion <= 0;
+  shieldPotionButton.disabled = state.player.inventory.shieldPotion <= 0
+    || state.player.currentShield >= state.player.maxShield;
   shieldPotionButton.addEventListener("click", () => handlers.onUsePotion("shieldPotion"));
 
   const waitButton = document.createElement("button");

@@ -195,6 +195,8 @@ function usePotion(state, potionType) {
 
   if (nextState.player.currentShield <= 0) {
     loseBattle(nextState);
+  } else {
+    recoverMana(nextState);
   }
 
   return nextState;
@@ -207,6 +209,11 @@ function useManaPotion(state) {
   }
 
   const restored = Math.min(POTION_RESTORE_AMOUNT, state.player.maxMana - state.player.currentMana);
+  if (restored === 0) {
+    addLog(state, "Mana is already full.");
+    return false;
+  }
+
   state.player.inventory.manaPotion -= 1;
   state.player.currentMana += restored;
   addLog(state, `Used Mana Potion and restored ${restored} mana.`);
@@ -220,6 +227,11 @@ function useShieldPotion(state) {
   }
 
   const restored = Math.min(POTION_RESTORE_AMOUNT, state.player.maxShield - state.player.currentShield);
+  if (restored === 0) {
+    addLog(state, "Shield is already full.");
+    return false;
+  }
+
   state.player.inventory.shieldPotion -= 1;
   state.player.currentShield += restored;
   addLog(state, `Used Shield Potion and restored ${restored} shield.`);

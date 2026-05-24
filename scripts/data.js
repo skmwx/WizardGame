@@ -1,5 +1,6 @@
 (() => {
 window.WizardData = {
+  // Keep the original localStorage key so existing installs can migrate v1 saves into saveVersion 2.
   STORAGE_KEY: "wizard-duel-save-v1",
   XP_TO_LEVEL: 100,
   MANA_RECOVERY_PER_TURN: 5,
