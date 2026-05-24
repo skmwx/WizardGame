@@ -1,6 +1,7 @@
 (() => {
 const { MANA_RECOVERY_PER_TURN, XP_TO_LEVEL } = window.WizardData;
 const { createEnemy, getNextEnemyIndex } = window.WizardState;
+const { getMasteredSpellEffect, grantSpellProgression } = window.WizardProgression;
 
 function castSpell(state, spell) {
   const nextState = structuredClone(state);
@@ -17,6 +18,7 @@ function castSpell(state, spell) {
 
   nextState.player.currentMana -= spell.manaCost;
   applySpellEffect(nextState, spell);
+  grantProgression(nextState, spell);
 
   if (nextState.enemy.currentHealth <= 0) {
     winBattle(nextState);
@@ -41,23 +43,33 @@ function restAfterBattle(state) {
 }
 
 function applySpellEffect(state, spell) {
-  if (spell.damage) {
-    state.enemy.currentHealth = Math.max(0, state.enemy.currentHealth - spell.damage);
-    addLog(state, `${spell.name} hits ${state.enemy.name} for ${spell.damage} damage.`);
+  const effect = getMasteredSpellEffect(spell, state.player);
+
+  if (effect.damage) {
+    state.enemy.currentHealth = Math.max(0, state.enemy.currentHealth - effect.damage);
+    addLog(state, `${spell.name} hits ${state.enemy.name} for ${effect.damage} damage.`);
   }
 
-  if (spell.shieldRestore) {
+  if (effect.shieldRestore) {
     const restored = Math.min(
-      spell.shieldRestore,
+      effect.shieldRestore,
       state.player.maxShield - state.player.currentShield
     );
     state.player.currentShield += restored;
     addLog(state, `${spell.name} restores ${restored} shield.`);
   }
 
-  if (spell.attackReduction) {
-    state.enemyNextAttackPenalty += spell.attackReduction;
-    addLog(state, `${state.enemy.name}'s next attack is reduced by ${spell.attackReduction}.`);
+  if (effect.attackReduction) {
+    state.enemyNextAttackPenalty += effect.attackReduction;
+    addLog(state, `${state.enemy.name}'s next attack is reduced by ${effect.attackReduction}.`);
+  }
+}
+
+function grantProgression(state, spell) {
+  const messages = grantSpellProgression(state.player, spell);
+
+  for (const message of messages) {
+    addLog(state, message);
   }
 }
 

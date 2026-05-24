@@ -1,10 +1,13 @@
 (() => {
 const { XP_TO_LEVEL, spells } = window.WizardData;
+const { getSchoolLevel, getSpellMasteryLevel } = window.WizardState;
+const { describeSpell } = window.WizardProgression;
 
 function render(state, handlers) {
   renderPlayer(state);
   renderEnemy(state);
   renderSpells(state, handlers);
+  renderProgression(state);
   renderLog(state);
 }
 
@@ -54,11 +57,33 @@ function renderSpells(state, handlers) {
     button.disabled = state.player.currentMana < spell.manaCost;
     button.innerHTML = `
       <strong>${spell.name}</strong>
-      <span>${spell.description}</span>
+      <span>${describeSpell(spell, state.player)}</span>
     `;
     button.addEventListener("click", () => handlers.onCast(spell));
     container.append(button);
   }
+}
+
+function renderProgression(state) {
+  const schoolStats = Object.entries(state.player.schools).map(([school, progress]) => [
+    formatLabel(school),
+    `Level ${getSchoolLevel(progress.xp)} (${progress.xp} XP)`
+  ]);
+  const masteryStats = spells.map((spell) => {
+    const progress = state.player.spellMastery[spell.id] ?? { xp: 0 };
+
+    return [
+      spell.name,
+      `Level ${getSpellMasteryLevel(progress.xp)} (${progress.xp} XP)`
+    ];
+  });
+
+  renderStats(document.querySelector("#school-progress"), schoolStats);
+  renderStats(document.querySelector("#spell-mastery"), masteryStats);
+}
+
+function formatLabel(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function renderLog(state) {

@@ -1,5 +1,5 @@
 (() => {
-const { STORAGE_KEY, enemyWizards, startingPlayer } = window.WizardData;
+const { STORAGE_KEY, enemyWizards, magicSchools, spells, startingPlayer } = window.WizardData;
 
 function createInitialState() {
   const player = structuredClone(startingPlayer);
@@ -52,7 +52,9 @@ function normalizeState(savedState) {
   const fallback = createInitialState();
   const player = {
     ...fallback.player,
-    ...savedState.player
+    ...savedState.player,
+    schools: normalizeSchools(savedState.player?.schools),
+    spellMastery: normalizeSpellMastery(savedState.player?.spellMastery)
   };
   const enemyIndex = Number.isInteger(savedState.enemyIndex)
     ? savedState.enemyIndex
@@ -71,10 +73,42 @@ function normalizeState(savedState) {
   };
 }
 
+function normalizeSchools(savedSchools = {}) {
+  return Object.fromEntries(
+    magicSchools.map((school) => [
+      school,
+      {
+        xp: Number.isFinite(savedSchools[school]?.xp) ? savedSchools[school].xp : 0
+      }
+    ])
+  );
+}
+
+function normalizeSpellMastery(savedMastery = {}) {
+  return Object.fromEntries(
+    spells.map((spell) => [
+      spell.id,
+      {
+        xp: Number.isFinite(savedMastery[spell.id]?.xp) ? savedMastery[spell.id].xp : 0
+      }
+    ])
+  );
+}
+
+function getSchoolLevel(xp) {
+  return 1 + Math.floor(xp / 10);
+}
+
+function getSpellMasteryLevel(xp) {
+  return 1 + Math.floor(xp / 5);
+}
+
 window.WizardState = {
   createEnemy,
   createInitialState,
+  getSchoolLevel,
   getNextEnemyIndex,
+  getSpellMasteryLevel,
   loadState,
   saveState
 };
