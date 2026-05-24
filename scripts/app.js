@@ -1,5 +1,5 @@
 (() => {
-const { castSpell, restAfterBattle } = window.WizardCombat;
+const { castSpell, restAfterBattle, surrenderBattle, waitTurn } = window.WizardCombat;
 const { createInitialState, loadState, saveState } = window.WizardState;
 const { render } = window.WizardRender;
 
@@ -13,6 +13,16 @@ const handlers = {
   },
   onContinue() {
     gameState = restAfterBattle(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onSurrender() {
+    gameState = surrenderBattle(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onWait() {
+    gameState = waitTurn(gameState);
     saveState(gameState);
     draw();
   }

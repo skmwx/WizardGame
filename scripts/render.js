@@ -1,7 +1,7 @@
 (() => {
 const { XP_TO_LEVEL, spells } = window.WizardData;
 const { getSchoolLevel, getSpellMasteryLevel } = window.WizardState;
-const { describeSpell } = window.WizardProgression;
+const { describeSpell, describeUnlockRequirement, isSpellUnlocked } = window.WizardProgression;
 
 function render(state, handlers) {
   renderPlayer(state);
@@ -38,7 +38,9 @@ function renderEnemy(state) {
 
 function renderSpells(state, handlers) {
   const container = document.querySelector("#spell-buttons");
+  const actions = document.querySelector("#combat-actions");
   container.innerHTML = "";
+  actions.innerHTML = "";
 
   if (state.battleOver) {
     const button = document.createElement("button");
@@ -51,17 +53,34 @@ function renderSpells(state, handlers) {
   }
 
   for (const spell of spells) {
+    const unlocked = isSpellUnlocked(spell, state.player);
     const button = document.createElement("button");
-    button.className = "spell-button";
+    button.className = unlocked ? "spell-button" : "spell-button locked";
     button.type = "button";
-    button.disabled = state.player.currentMana < spell.manaCost;
+    button.disabled = !unlocked || state.player.currentMana < spell.manaCost;
     button.innerHTML = `
       <strong>${spell.name}</strong>
-      <span>${describeSpell(spell, state.player)}</span>
+      <span>${unlocked ? describeSpell(spell, state.player) : describeUnlockRequirement(spell)}</span>
     `;
     button.addEventListener("click", () => handlers.onCast(spell));
     container.append(button);
   }
+
+  renderCombatActions(actions, handlers);
+}
+
+function renderCombatActions(container, handlers) {
+  const waitButton = document.createElement("button");
+  waitButton.type = "button";
+  waitButton.textContent = "Wait";
+  waitButton.addEventListener("click", handlers.onWait);
+
+  const surrenderButton = document.createElement("button");
+  surrenderButton.type = "button";
+  surrenderButton.textContent = "Surrender";
+  surrenderButton.addEventListener("click", handlers.onSurrender);
+
+  container.append(waitButton, surrenderButton);
 }
 
 function renderProgression(state) {

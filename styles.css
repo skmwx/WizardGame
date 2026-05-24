@@ -134,6 +134,17 @@ h2 {
   line-height: 1.35;
 }
 
+.spell-button.locked {
+  background: #eee7dc;
+}
+
+.combat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .battle-log {
   gap: 8px;
   list-style-position: inside;

@@ -2,6 +2,12 @@
 const { getSpellMasteryLevel: getLevelFromXp } = window.WizardState;
 const { getSchoolLevel } = window.WizardState;
 
+function getPlayerSchoolLevel(player, school) {
+  const xp = player.schools?.[school]?.xp ?? 0;
+
+  return getSchoolLevel(xp);
+}
+
 function getSpellMasteryLevel(player, spellId) {
   const xp = player.spellMastery?.[spellId]?.xp ?? 0;
 
@@ -28,6 +34,22 @@ function describeSpell(spell, player) {
   }
 
   return spell.description;
+}
+
+function describeUnlockRequirement(spell) {
+  if (!spell.unlock || spell.unlock.unlocked) {
+    return "";
+  }
+
+  return `Unlocks at ${formatLabel(spell.unlock.school)} school level ${spell.unlock.level}.`;
+}
+
+function isSpellUnlocked(spell, player) {
+  if (!spell.unlock || spell.unlock.unlocked) {
+    return true;
+  }
+
+  return getPlayerSchoolLevel(player, spell.unlock.school) >= spell.unlock.level;
 }
 
 function getMasteredSpellEffect(spell, player) {
@@ -74,8 +96,11 @@ function formatLabel(value) {
 
 window.WizardProgression = {
   describeSpell,
+  describeUnlockRequirement,
   getMasteredSpellEffect,
+  getPlayerSchoolLevel,
   getSpellMasteryLevel,
-  grantSpellProgression
+  grantSpellProgression,
+  isSpellUnlocked
 };
 })();

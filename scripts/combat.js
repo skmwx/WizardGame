@@ -1,13 +1,18 @@
 (() => {
 const { MANA_RECOVERY_PER_TURN, XP_TO_LEVEL } = window.WizardData;
 const { createEnemy, getNextEnemyIndex } = window.WizardState;
-const { getMasteredSpellEffect, grantSpellProgression } = window.WizardProgression;
+const { getMasteredSpellEffect, grantSpellProgression, isSpellUnlocked } = window.WizardProgression;
 
 function castSpell(state, spell) {
   const nextState = structuredClone(state);
 
   if (nextState.battleOver) {
     startNextBattle(nextState);
+    return nextState;
+  }
+
+  if (!isSpellUnlocked(spell, nextState.player)) {
+    addLog(nextState, `${spell.name} is still locked.`);
     return nextState;
   }
 
@@ -39,6 +44,38 @@ function castSpell(state, spell) {
 function restAfterBattle(state) {
   const nextState = structuredClone(state);
   startNextBattle(nextState);
+  return nextState;
+}
+
+function waitTurn(state) {
+  const nextState = structuredClone(state);
+
+  if (nextState.battleOver) {
+    return nextState;
+  }
+
+  const recovered = recoverMana(nextState);
+
+  if (recovered === 0) {
+    addLog(nextState, "You wait for an opening.");
+  }
+
+  enemyTurn(nextState);
+
+  if (nextState.player.currentShield <= 0) {
+    loseBattle(nextState);
+  }
+
+  return nextState;
+}
+
+function surrenderBattle(state) {
+  const nextState = structuredClone(state);
+
+  if (!nextState.battleOver) {
+    loseBattle(nextState, "You surrender the duel.");
+  }
+
   return nextState;
 }
 
@@ -91,6 +128,8 @@ function recoverMana(state) {
     state.player.currentMana += recovered;
     addLog(state, `You recover ${recovered} mana.`);
   }
+
+  return recovered;
 }
 
 function winBattle(state) {
@@ -103,11 +142,11 @@ function winBattle(state) {
   );
 }
 
-function loseBattle(state) {
+function loseBattle(state, message = "Defeat.") {
   state.battleOver = true;
   const consolationXp = Math.max(8, Math.floor(state.enemy.xpReward * 0.25));
   gainXp(state, consolationXp);
-  addLog(state, `Defeat. You keep your progress and gain ${consolationXp} XP.`);
+  addLog(state, `${message} You keep your progress and gain ${consolationXp} XP.`);
 }
 
 function startNextBattle(state) {
@@ -148,6 +187,8 @@ function randomInt(min, max) {
 
 window.WizardCombat = {
   castSpell,
-  restAfterBattle
+  restAfterBattle,
+  surrenderBattle,
+  waitTurn
 };
 })();

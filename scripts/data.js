@@ -18,6 +18,18 @@ window.WizardData = {
     description: "Costs 8 mana and deals 18 damage."
   },
   {
+    id: "ignite",
+    name: "Ignite",
+    school: "fire",
+    manaCost: 5,
+    damage: 11,
+    unlock: {
+      school: "fire",
+      level: 3
+    },
+    description: "Costs 5 mana and deals 11 damage."
+  },
+  {
     id: "waterShield",
     name: "Water Shield",
     school: "water",
@@ -28,6 +40,18 @@ window.WizardData = {
       requirement: null
     },
     description: "Costs 7 mana and restores 16 shield."
+  },
+  {
+    id: "manaFlow",
+    name: "Mana Flow",
+    school: "water",
+    manaCost: 4,
+    shieldRestore: 8,
+    unlock: {
+      school: "water",
+      level: 3
+    },
+    description: "Costs 4 mana and restores 8 shield."
   },
   {
     id: "mindSpike",
@@ -41,6 +65,18 @@ window.WizardData = {
       requirement: null
     },
     description: "Costs 6 mana, deals 10 damage, and weakens the next enemy attack by 8."
+  },
+  {
+    id: "confuse",
+    name: "Confuse",
+    school: "mind",
+    manaCost: 5,
+    attackReduction: 9,
+    unlock: {
+      school: "mind",
+      level: 3
+    },
+    description: "Costs 5 mana and weakens the next enemy attack by 9."
   }
 ],
 
@@ -89,8 +125,11 @@ window.WizardData = {
     },
     spellMastery: {
       fireBolt: { xp: 0 },
+      ignite: { xp: 0 },
       waterShield: { xp: 0 },
-      mindSpike: { xp: 0 }
+      manaFlow: { xp: 0 },
+      mindSpike: { xp: 0 },
+      confuse: { xp: 0 }
     }
   }
 };
