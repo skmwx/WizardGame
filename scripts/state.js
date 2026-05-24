@@ -67,6 +67,7 @@ function normalizeState(savedState) {
   const player = {
     ...fallback.player,
     ...migratedState.player,
+    inventory: normalizeInventory(migratedState.player?.inventory),
     schools: normalizeSchools(migratedState.player?.schools),
     spellMastery: normalizeSpellMastery(migratedState.player?.spellMastery)
   };
@@ -95,7 +96,7 @@ function normalizeMode(mode) {
 }
 
 function normalizeHubActivity(activity) {
-  return activity === "training" ? activity : "main";
+  return activity === "training" || activity === "shop" ? activity : "main";
 }
 
 function migrateSaveState(savedState, sourceSaveVersion) {
@@ -115,6 +116,13 @@ function normalizeSchools(savedSchools = {}) {
       }
     ])
   );
+}
+
+function normalizeInventory(savedInventory = {}) {
+  return {
+    manaPotion: Number.isInteger(savedInventory.manaPotion) ? savedInventory.manaPotion : 0,
+    shieldPotion: Number.isInteger(savedInventory.shieldPotion) ? savedInventory.shieldPotion : 0
+  };
 }
 
 function normalizeSpellMastery(savedMastery = {}) {

@@ -5,6 +5,21 @@ window.WizardData = {
   MANA_RECOVERY_PER_TURN: 5,
   TRAINING_COST: 15,
   TRAINING_SCHOOL_XP: 3,
+  POTION_RESTORE_AMOUNT: 20,
+  shopItems: [
+    {
+      id: "manaPotion",
+      name: "Mana Potion",
+      cost: 20,
+      inventoryKey: "manaPotion"
+    },
+    {
+      id: "shieldPotion",
+      name: "Shield Potion",
+      cost: 20,
+      inventoryKey: "shieldPotion"
+    }
+  ],
   magicSchools: ["fire", "water", "mind"],
   spells: [
   {
@@ -120,6 +135,10 @@ window.WizardData = {
     currentMana: 32,
     maxShield: 38,
     currentShield: 38,
+    inventory: {
+      manaPotion: 0,
+      shieldPotion: 0
+    },
     schools: {
       fire: { xp: 0 },
       water: { xp: 0 },

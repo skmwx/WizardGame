@@ -1,6 +1,7 @@
 (() => {
 const {
   castSpell,
+  buyShopItem,
   findDuel,
   restAfterBattle,
   restAtHub,
@@ -8,6 +9,8 @@ const {
   surrenderBattle,
   trainSchool,
   trainMagic,
+  usePotion,
+  visitShop,
   waitTurn
 } = window.WizardCombat;
 const { createInitialState, loadState, saveState } = window.WizardState;
@@ -28,6 +31,11 @@ const handlers = {
   },
   onFindDuel() {
     gameState = findDuel(gameState);
+    saveState(gameState);
+    draw();
+  },
+  onBuyShopItem(itemId) {
+    gameState = buyShopItem(gameState, itemId);
     saveState(gameState);
     draw();
   },
@@ -53,6 +61,16 @@ const handlers = {
   },
   onTrainSchool(school) {
     gameState = trainSchool(gameState, school);
+    saveState(gameState);
+    draw();
+  },
+  onUsePotion(potionType) {
+    gameState = usePotion(gameState, potionType);
+    saveState(gameState);
+    draw();
+  },
+  onVisitShop() {
+    gameState = visitShop(gameState);
     saveState(gameState);
     draw();
   },

@@ -1,5 +1,13 @@
 (() => {
-const { TRAINING_COST, TRAINING_SCHOOL_XP, XP_TO_LEVEL, magicSchools, spells } = window.WizardData;
+const {
+  POTION_RESTORE_AMOUNT,
+  TRAINING_COST,
+  TRAINING_SCHOOL_XP,
+  XP_TO_LEVEL,
+  magicSchools,
+  shopItems,
+  spells
+} = window.WizardData;
 const { getSchoolLevel, getSpellMasteryLevel } = window.WizardState;
 const { describeSpell, describeUnlockRequirement, isSpellUnlocked } = window.WizardProgression;
 
@@ -18,7 +26,9 @@ function renderPlayer(state) {
     ["XP", `${player.xp} / ${XP_TO_LEVEL}`],
     ["Gold", player.gold],
     ["Mana", `${player.currentMana} / ${player.maxMana}`],
-    ["Shield", `${player.currentShield} / ${player.maxShield}`]
+    ["Shield", `${player.currentShield} / ${player.maxShield}`],
+    ["Mana Potions", player.inventory.manaPotion],
+    ["Shield Potions", player.inventory.shieldPotion]
   ];
 
   renderStats(document.querySelector("#player-stats"), stats);
@@ -81,13 +91,19 @@ function renderActivityPanel(state, handlers) {
     container.append(button);
   }
 
-  renderCombatActions(actions, handlers);
+  renderCombatActions(actions, state, handlers);
 }
 
 function renderHubPanel(title, container, state, handlers) {
   if (state.hubActivity === "training") {
     title.textContent = "Train Magic";
     renderTrainingActions(container, state, handlers);
+    return;
+  }
+
+  if (state.hubActivity === "shop") {
+    title.textContent = "Shop";
+    renderShopActions(container, state, handlers);
     return;
   }
 
@@ -99,6 +115,7 @@ function renderHubActions(container, handlers) {
   const actions = [
     ["Find Duel", handlers.onFindDuel],
     ["Train Magic", handlers.onTrainMagic],
+    ["Visit Shop", handlers.onVisitShop],
     ["Rest", handlers.onRest]
   ];
 
@@ -110,6 +127,28 @@ function renderHubActions(container, handlers) {
     button.addEventListener("click", handler);
     container.append(button);
   }
+}
+
+function renderShopActions(container, state, handlers) {
+  for (const item of shopItems) {
+    const owned = state.player.inventory[item.inventoryKey] ?? 0;
+    const button = document.createElement("button");
+    button.className = "spell-button";
+    button.type = "button";
+    button.innerHTML = `
+      <strong>${item.name}</strong>
+      <span>Costs ${item.cost} gold. Owned: ${owned}.</span>
+    `;
+    button.addEventListener("click", () => handlers.onBuyShopItem(item.id));
+    container.append(button);
+  }
+
+  const backButton = document.createElement("button");
+  backButton.className = "spell-button";
+  backButton.type = "button";
+  backButton.textContent = "Back to hub";
+  backButton.addEventListener("click", handlers.onReturnToHubActivity);
+  container.append(backButton);
 }
 
 function renderTrainingActions(container, state, handlers) {
@@ -133,7 +172,21 @@ function renderTrainingActions(container, state, handlers) {
   container.append(backButton);
 }
 
-function renderCombatActions(container, handlers) {
+function renderCombatActions(container, state, handlers) {
+  const manaPotionButton = document.createElement("button");
+  manaPotionButton.type = "button";
+  manaPotionButton.textContent = `Use Mana Potion (${state.player.inventory.manaPotion})`;
+  manaPotionButton.title = `Restores ${POTION_RESTORE_AMOUNT} mana.`;
+  manaPotionButton.disabled = state.player.inventory.manaPotion <= 0;
+  manaPotionButton.addEventListener("click", () => handlers.onUsePotion("manaPotion"));
+
+  const shieldPotionButton = document.createElement("button");
+  shieldPotionButton.type = "button";
+  shieldPotionButton.textContent = `Use Shield Potion (${state.player.inventory.shieldPotion})`;
+  shieldPotionButton.title = `Restores ${POTION_RESTORE_AMOUNT} shield.`;
+  shieldPotionButton.disabled = state.player.inventory.shieldPotion <= 0;
+  shieldPotionButton.addEventListener("click", () => handlers.onUsePotion("shieldPotion"));
+
   const waitButton = document.createElement("button");
   waitButton.type = "button";
   waitButton.textContent = "Wait";
@@ -144,7 +197,7 @@ function renderCombatActions(container, handlers) {
   surrenderButton.textContent = "Surrender";
   surrenderButton.addEventListener("click", handlers.onSurrender);
 
-  container.append(waitButton, surrenderButton);
+  container.append(manaPotionButton, shieldPotionButton, waitButton, surrenderButton);
 }
 
 function renderProgression(state) {

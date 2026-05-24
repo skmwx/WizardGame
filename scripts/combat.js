@@ -1,5 +1,13 @@
 (() => {
-const { MANA_RECOVERY_PER_TURN, TRAINING_COST, TRAINING_SCHOOL_XP, XP_TO_LEVEL, magicSchools } = window.WizardData;
+const {
+  MANA_RECOVERY_PER_TURN,
+  POTION_RESTORE_AMOUNT,
+  TRAINING_COST,
+  TRAINING_SCHOOL_XP,
+  XP_TO_LEVEL,
+  magicSchools,
+  shopItems
+} = window.WizardData;
 const { createEnemy, getNextEnemyIndex } = window.WizardState;
 const { getMasteredSpellEffect, grantSchoolXp, grantSpellProgression, isSpellUnlocked } = window.WizardProgression;
 
@@ -84,6 +92,15 @@ function trainMagic(state) {
   return nextState;
 }
 
+function visitShop(state) {
+  const nextState = structuredClone(state);
+
+  nextState.mode = "hub";
+  nextState.hubActivity = "shop";
+
+  return nextState;
+}
+
 function returnToHubActivity(state) {
   const nextState = structuredClone(state);
 
@@ -123,6 +140,90 @@ function trainSchool(state, school) {
   }
 
   return nextState;
+}
+
+function buyShopItem(state, itemId) {
+  const nextState = structuredClone(state);
+  const item = shopItems.find((candidate) => candidate.id === itemId);
+
+  if (nextState.mode !== "hub") {
+    addLog(nextState, "Return to the hub before visiting the shop.");
+    return nextState;
+  }
+
+  if (!item) {
+    addLog(nextState, "Unknown shop item.");
+    return nextState;
+  }
+
+  if (nextState.player.gold < item.cost) {
+    addLog(nextState, `${item.name} costs ${item.cost} gold.`);
+    return nextState;
+  }
+
+  nextState.player.gold -= item.cost;
+  nextState.player.inventory[item.inventoryKey] ??= 0;
+  nextState.player.inventory[item.inventoryKey] += 1;
+  addLog(nextState, `Bought ${item.name} for ${item.cost} gold.`);
+
+  return nextState;
+}
+
+function usePotion(state, potionType) {
+  const nextState = structuredClone(state);
+  let used = false;
+
+  if (nextState.mode !== "duel" || nextState.battleOver) {
+    addLog(nextState, "Potions can only be used during an active duel.");
+    return nextState;
+  }
+
+  if (potionType === "manaPotion") {
+    used = useManaPotion(nextState);
+  } else if (potionType === "shieldPotion") {
+    used = useShieldPotion(nextState);
+  } else {
+    addLog(nextState, "Unknown potion.");
+    return nextState;
+  }
+
+  if (!used) {
+    return nextState;
+  }
+
+  enemyTurn(nextState);
+
+  if (nextState.player.currentShield <= 0) {
+    loseBattle(nextState);
+  }
+
+  return nextState;
+}
+
+function useManaPotion(state) {
+  if (state.player.inventory.manaPotion <= 0) {
+    addLog(state, "No Mana Potions available.");
+    return false;
+  }
+
+  const restored = Math.min(POTION_RESTORE_AMOUNT, state.player.maxMana - state.player.currentMana);
+  state.player.inventory.manaPotion -= 1;
+  state.player.currentMana += restored;
+  addLog(state, `Used Mana Potion and restored ${restored} mana.`);
+  return true;
+}
+
+function useShieldPotion(state) {
+  if (state.player.inventory.shieldPotion <= 0) {
+    addLog(state, "No Shield Potions available.");
+    return false;
+  }
+
+  const restored = Math.min(POTION_RESTORE_AMOUNT, state.player.maxShield - state.player.currentShield);
+  state.player.inventory.shieldPotion -= 1;
+  state.player.currentShield += restored;
+  addLog(state, `Used Shield Potion and restored ${restored} shield.`);
+  return true;
 }
 
 function waitTurn(state) {
@@ -274,6 +375,7 @@ function formatLabel(value) {
 
 window.WizardCombat = {
   castSpell,
+  buyShopItem,
   findDuel,
   returnToHubActivity,
   restAfterBattle,
@@ -281,6 +383,8 @@ window.WizardCombat = {
   surrenderBattle,
   trainSchool,
   trainMagic,
+  usePotion,
+  visitShop,
   waitTurn
 };
 })();
