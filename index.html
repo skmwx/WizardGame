@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wizard Duel</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>Wizard Duel</h1>
+          <p>Single-player turn-based wizard RPG</p>
+        </div>
+        <div class="save-controls">
+          <button id="save-button" type="button">Save</button>
+          <button id="load-button" type="button">Load</button>
+          <button id="new-game-button" type="button">New Game</button>
+        </div>
+      </header>
+
+      <section class="status-grid" aria-label="Combatants">
+        <article class="panel">
+          <h2>Player</h2>
+          <dl id="player-stats" class="stats"></dl>
+        </article>
+
+        <article class="panel">
+          <h2>Enemy Wizard</h2>
+          <dl id="enemy-stats" class="stats"></dl>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Spells</h2>
+        <div id="spell-buttons" class="spell-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Battle Log</h2>
+        <ol id="battle-log" class="battle-log" aria-live="polite"></ol>
+      </section>
+    </main>
+
+    <script src="scripts/data.js"></script>
+    <script src="scripts/state.js"></script>
+    <script src="scripts/combat.js"></script>
+    <script src="scripts/render.js"></script>
+    <script src="scripts/app.js"></script>
+  </body>
+</html>
